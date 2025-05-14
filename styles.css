@@ -1,0 +1,155 @@
+/* Custom Styles */
+.tool-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+}
+
+.tool-section {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tool-specific styles */
+#pdfTool textarea,
+#wordTool textarea {
+    min-height: 200px;
+    resize: vertical;
+}
+
+#imageTool .preview-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+#qrTool #qrcode {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+#typingTool .typing-area {
+    font-family: monospace;
+    line-height: 1.5;
+}
+
+#typingTool .current {
+    background-color: #e2e8f0;
+    border-radius: 2px;
+}
+
+#typingTool .correct {
+    color: #10b981;
+}
+
+#typingTool .incorrect {
+    color: #ef4444;
+    text-decoration: underline;
+}
+
+/* Dark mode adjustments */
+.dark #qrTool #qrcode {
+    background: #1f2937;
+}
+
+.dark #typingTool .current {
+    background-color: #374151;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .tool-card {
+        margin-bottom: 1rem;
+    }
+    
+    #toolSections {
+        padding: 1rem;
+    }
+}
+
+/* Loading spinner */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+[data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+} 
