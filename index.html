@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartToolsPro - Your All-in-One Web Tools Collection</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="Your All-in-One Web Tools Collection">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="SmartToolsPro">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167x167.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Required Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/browser-image-compression/2.0.2/browser-image-compression.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Ad Configuration -->
+    <script type="text/javascript">
+        atOptions = {
+            'key' : '34daa95d37aa866e4d5dc188a89f19b2',
+            'format' : 'iframe',
+            'height' : 50,
+            'width' : 320,
+            'params' : {}
+        };
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-md">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white">SmartToolsPro</h1>
+                <button id="copyLink" class="p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors" data-tooltip="Copy website link">
+                    <i class="fas fa-link"></i>
+                </button>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:block text-yellow-300"></i>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Ad Containers -->
+        <div id="banner-ad-container" class="flex justify-center mb-8"></div>
+        <div id="direct-link-ad-container" class="flex justify-center mb-8"></div>
+
+        <!-- Dashboard Grid -->
+        <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Tool Cards -->
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-file-pdf mr-2"></i>Text to PDF
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Convert your text into PDF format instantly.</p>
+                <div class="ad-container mb-4" data-tool="pdf"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="pdf">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-compress mr-2"></i>Image Compressor
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Compress your images without losing quality.</p>
+                <div class="ad-container mb-4" data-tool="image"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="image">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-calculator mr-2"></i>Word Counter
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Count words, characters, and paragraphs.</p>
+                <div class="ad-container mb-4" data-tool="word"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="word">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-qrcode mr-2"></i>QR Code Generator
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Generate QR codes for any text or URL.</p>
+                <div class="ad-container mb-4" data-tool="qr"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="qr">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-exchange-alt mr-2"></i>Unit Converter
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Convert between different units of measurement.</p>
+                <div class="ad-container mb-4" data-tool="unit"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="unit">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-birthday-cake mr-2"></i>Age Calculator
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Calculate age and important dates.</p>
+                <div class="ad-container mb-4" data-tool="age"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="age">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-keyboard mr-2"></i>Typing Test
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Test your typing speed and accuracy.</p>
+                <div class="ad-container mb-4" data-tool="typing"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="typing">
+                    Open Tool
+                </button>
+            </div>
+
+            <div class="tool-card bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">
+                    <i class="fas fa-key mr-2"></i>Password Generator
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">Generate secure passwords with custom options.</p>
+                <div class="ad-container mb-4" data-tool="password"></div>
+                <button class="open-tool bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors" data-tool="password">
+                    Open Tool
+                </button>
+            </div>
+        </div>
+
+        <!-- Tool Sections (Hidden by default) -->
+        <div id="toolSections" class="hidden">
+            <!-- Back to Dashboard Button -->
+            <button id="backToDashboard" class="mb-6 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </button>
+
+            <!-- Tool Containers -->
+            <div id="pdfTool" class="tool-section hidden">
+                <!-- Text to PDF Tool Content -->
+            </div>
+
+            <div id="imageTool" class="tool-section hidden">
+                <!-- Image Compressor Tool Content -->
+            </div>
+
+            <div id="wordTool" class="tool-section hidden">
+                <!-- Word Counter Tool Content -->
+            </div>
+
+            <div id="qrTool" class="tool-section hidden">
+                <!-- QR Code Generator Tool Content -->
+            </div>
+
+            <div id="unitTool" class="tool-section hidden">
+                <!-- Unit Converter Tool Content -->
+            </div>
+
+            <div id="ageTool" class="tool-section hidden">
+                <!-- Age Calculator Tool Content -->
+            </div>
+
+            <div id="typingTool" class="tool-section hidden">
+                <!-- Typing Test Tool Content -->
+            </div>
+
+            <div id="passwordTool" class="tool-section hidden">
+                <!-- Password Generator Tool Content -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">About SmartToolsPro</h3>
+                    <p class="text-gray-300">Your one-stop solution for all online tools. Convert, compress, calculate, and more with our easy-to-use tools.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">Home</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Tools</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Contact</h3>
+                    <p class="text-gray-300">Email: contact@smarttoolspro.com</p>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center">
+                <p>&copy; 2024 SmartToolsPro. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Banner Ad Container -->
+    <div id="banner-ad-container" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 shadow-lg"></div>
+
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html> 
