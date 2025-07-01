@@ -125,19 +125,13 @@
 
     .game-button:hover { background-color: #ffb167; }
     .game-button:active { transform: translateY(5px); box-shadow: 0 0px 0 #e67e22; }
-    
-    .developer-credit {
-        font-size: 0.9rem;
-        margin-top: 25px;
-        opacity: 0.8;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
-    }
 
     /* --- Skin Selection Screen Styles --- */
     #skin-selection-screen .modal-content {
       max-width: 95%; width: 600px; max-height: 90vh; display: flex; flex-direction: column;
     }
     
+    /* FIX: Removed the background from the main modal on start and skin screens */
     #start-screen .modal-content,
     #skin-selection-screen .modal-content {
         background: none;
@@ -194,16 +188,6 @@
 </head>
 <body>
 
-<!-- NEW: Tutorial screen for first-time users -->
-<div id="tutorial-screen" class="overlay hidden">
-  <div class="modal-content">
-    <h2>How to Play</h2>
-    <p>Welcome! Click or tap anywhere on the screen to make the bottle jump.</p>
-    <p>Your goal is to reach the next platform without falling into the water or hitting obstacles. Collect coins to unlock new bottles!</p>
-    <button id="tutorial-button" class="game-button">Got It!</button>
-  </div>
-</div>
-
 <div id="start-screen" class="overlay">
   <div class="top-ui-container">
       <button id="sound-toggle-btn" aria-label="Toggle Sound">
@@ -218,8 +202,6 @@
     <h1>Bottle Play</h1>
     <p>Click to jump and reach the next platform. Collect coins along the way!</p>
     <button id="startButton" class="game-button">Start Game</button>
-    <!-- NEW: Developer Credit -->
-    <p class="developer-credit">Developed by Wajid Ali (xAli FF)</p>
   </div>
 </div>
 
@@ -258,8 +240,6 @@ const playButton = document.getElementById('playButton');
 const soundToggleButton = document.getElementById('sound-toggle-btn');
 const soundOnIcon = document.getElementById('sound-on-icon');
 const soundOffIcon = document.getElementById('sound-off-icon');
-const tutorialScreen = document.getElementById('tutorial-screen');
-const tutorialButton = document.getElementById('tutorial-button');
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -270,37 +250,41 @@ resize();
 
 // --- Asset Management (تصویروں کا انتظام) ---
 const images = {};
-// NEW: Split assets for faster initial load
-const preloadAssets = {
-  homeBackground: 'https://i.ibb.co/3yt4p7fb/homepage.jpg',
-  coin: 'https://i.ibb.co/9kq4PWs6/Coin.png',
+// UPDATE: All image paths now point to the 'Assets' folder and filenames are corrected.
+const assets = {
+  bottleClassic: 'Assets/Classic Free fire.png',
+  bottleZindanabad: 'Assets/Zindanabad plays.png',
+  bottleRufe: 'Assets/Rufe bhia.png',
+  bottleKhanzada: 'Assets/Khanzada.png',
+  bottleProfessor: 'Assets/Professor.png',
+  platform: 'Assets/platform.png',
+  water: 'Assets/Water.png',
+  background: 'Assets/game backgournd.jpg',
+  helicopter: 'Assets/helicopter.png',
+  shark: 'Assets/shark.png',
+  homeBackground: 'Assets/homepage.jpg',
+  coin: 'Assets/Coin.png',
+  finishFlag: 'Assets/Red flag.png'
 };
-const gameAssets = {
-  bottleClassic: 'https://i.ibb.co/tpXndZsx/Classic-Free-fire.png',
-  bottleZindanabad: 'https://i.ibb.co/j97B9vyg/Zindanabad-play.png',
-  bottleRufe: 'https://i.ibb.co/4ZHq0ckQ/Rufe-bhia.png',
-  bottleKhanzada: 'https://i.ibb.co/jvNMhbvH/Khanzada.png',
-  bottleProfessor: 'https://i.ibb.co/C5KYHF77/Professor-2.png',
-  platform: 'https://i.ibb.co/G307pN5L/platform.png',
-  water: 'https://i.ibb.co/N6LdZNz9/Water.png',
-  background: 'https://i.ibb.co/bRW98s4h/game-backgournd.jpg',
-  helicopter: 'https://i.ibb.co/Mxbw9N2Q/helicopter.png',
-  shark: 'https://i.ibb.co/PvdrNKW6/shark.png',
-  finishFlag: 'https://i.ibb.co/XxypY3MK/Red-flag.png'
-};
-let gameAssetsLoaded = false;
+let loadedAssets = 0;
+const totalAssets = Object.keys(assets).length;
+let assetsAreLoaded = false;
 
 // --- Sound Management (آواز کا انتظام) ---
 const sounds = {};
 const soundAssets = {
+    // اپنی ساؤنڈ فائل کے نام یہاں لکھیں
     backgroundMusic: 'background-music-224633.mp3',
     jumpSound: 'fist-punch-or-kick-7171.mp3',
     coinSound: 'retro-coin-4-236671.mp3',
     winSound: '11l-victory-1749704552668-358772.mp3',
     gameOverSound: 'video-game-bonus-323603.mp3'
 };
+let loadedSounds = 0;
+const totalSounds = Object.keys(soundAssets).length;
 let isMuted = false;
 let backgroundMusicHasStarted = false;
+
 
 // یہ فنکشن آواز چلانے کے لیے ہے۔
 function playSound(key, loop = false, volume = 1.0) {
@@ -311,66 +295,86 @@ function playSound(key, loop = false, volume = 1.0) {
         sounds[key].play().catch(e => console.log(`Could not play sound without user interaction: ${e}`));
     }
 }
+
+// یہ فنکشن پس منظر کی موسیقی کے علاوہ تمام آوازوں کو روکتا ہے۔
 function stopAllSounds() {
     for (let key in sounds) {
-        if (key === 'backgroundMusic') continue;
+        if (key === 'backgroundMusic') continue; // پس منظر کی موسیقی کو نہ روکیں۔
         if (sounds[key]) {
             sounds[key].pause();
             sounds[key].currentTime = 0;
         }
     }
 }
+
+// --- NEW: Sound Toggle and Global Music Logic ---
+// یہ فنکشن صارف کے پہلے کلک پر پس منظر کی موسیقی شروع کرتا ہے۔
 function startBackgroundMusic() {
-    if (backgroundMusicHasStarted) return;
+    if (backgroundMusicHasStarted || !assetsAreLoaded) return;
     playSound('backgroundMusic', true, 0.5); // loop=true, volume=0.5
     backgroundMusicHasStarted = true;
 }
+
+// یہ فنکشن آواز کو خاموش یا آن کرتا ہے۔
 function toggleMute() {
     isMuted = !isMuted;
     localStorage.setItem('bottlePlayIsMuted', isMuted);
     applyMuteState();
 }
+
+// یہ فنکشن خاموشی کی حالت کو تمام آوازوں اور آئیکن پر لاگو کرتا ہے۔
 function applyMuteState() {
     for (let key in sounds) {
-        if (sounds[key]) { sounds[key].muted = isMuted; }
+        if (sounds[key]) {
+            sounds[key].muted = isMuted;
+        }
     }
     soundOnIcon.classList.toggle('hidden', isMuted);
     soundOffIcon.classList.toggle('hidden', !isMuted);
 }
+
+// محفوظ شدہ خاموشی کی حالت کو لوڈ کرتا ہے۔
 function loadMuteState() {
     isMuted = localStorage.getItem('bottlePlayIsMuted') === 'true';
     applyMuteState();
 }
 
-// NEW: Flexible Asset Loader
-function loadAssetBatch(assetObject, onComplete) {
-    const assetKeys = Object.keys(assetObject);
-    if (assetKeys.length === 0) {
-        if(onComplete) onComplete();
-        return;
-    }
-    let loadedCount = 0;
-    const totalToLoad = assetKeys.length;
 
-    assetKeys.forEach(key => {
-        const img = new Image();
-        img.src = assetObject[key];
-        img.onload = () => { 
-            loadedCount++;
-            images[key] = img;
-            if (loadedCount === totalToLoad && onComplete) {
-                onComplete();
-            }
-        };
-        img.onerror = () => { 
-            loadedCount++;
-            console.warn(`Could not load asset: ${key} at path ${assetObject[key]}`);
-            if (loadedCount === totalToLoad && onComplete) {
-                onComplete();
-            }
-        };
-    });
+// تصویریں اور آوازیں لوڈ کرنے کا عمل
+function checkAllAssetsLoaded() {
+    if (loadedAssets === totalAssets && loadedSounds === totalSounds) {
+        assetsAreLoaded = true;
+        startButton.textContent = "Start Game"; // لوڈنگ مکمل ہونے پر بٹن کا ٹیکسٹ واپس سیٹ کریں
+        if (images.homeBackground && images.homeBackground.complete) {
+            startScreen.style.backgroundImage = `url(${images.homeBackground.src})`;
+            skinSelectionScreen.style.backgroundImage = `url(${images.homeBackground.src})`;
+        }
+        if (images.coin && images.coin.complete) {
+            totalCoinDisplayIcon.src = images.coin.src;
+        }
+        populateSkins();
+        applyMuteState(); // Ensure mute state is correct after sounds load
+    }
 }
+
+// تصویریں لوڈ کریں
+for (let key in assets) {
+  const img = new Image();
+  img.src = assets[key];
+  img.onload = () => { loadedAssets++; checkAllAssetsLoaded(); };
+  img.onerror = () => { loadedAssets++; console.warn(`Could not load asset: ${key} at path ${assets[key]}`); checkAllAssetsLoaded(); }
+  images[key] = img;
+}
+
+// آوازیں لوڈ کریں
+for (let key in soundAssets) {
+    const audio = new Audio();
+    audio.src = soundAssets[key];
+    audio.oncanplaythrough = () => { loadedSounds++; checkAllAssetsLoaded(); };
+    audio.onerror = () => { loadedSounds++; console.warn(`Could not load sound: ${key} at path ${soundAssets[key]}`); checkAllAssetsLoaded(); }
+    sounds[key] = audio;
+}
+
 
 // --- Skins (بوتل کی مختلف شکلیں) ---
 const skins = [
@@ -382,65 +386,152 @@ const skins = [
     { id: 'comingSoon', name: 'Coming Soon', locked: true, price: 9999 }
 ];
 
-// --- Game Constants & Variables ---
-const COIN_FLIP_SPEED = 0.05, BOTTLE_WIDTH = 40, BOTTLE_HEIGHT = 110, GRAVITY = 0.5, JUMP_VELOCITY = -10, MOVE_SPEED = 4;
+// --- Game Constants (گیم کی اہم سیٹنگز) ---
+const COIN_FLIP_SPEED = 0.05;
 const particleColors = ['#ffdd00', '#ff9f43', '#a2e8f0', '#ffffff'];
+const BOTTLE_WIDTH = 40;   // بوتل کی چوڑائی
+const BOTTLE_HEIGHT = 120; // بوتل کی اونچائی
+const GRAVITY = 0.5;       // کشش ثقل
+const JUMP_VELOCITY = -10; // جمپ کی طاقت
+const MOVE_SPEED = 4;      // آگے بڑھنے کی رفتار
+
+// --- Game Variables (گیم کے دوران بدلنے والی ویلیوز) ---
 let bottle, platforms, helicopters, sharks, coins, particles;
-let waterY, cameraX, level = 1, currentRunCoins = 0, totalCoins = 0, unlockedSkins = [], isJumping = false, gameIsOver = false, gameLoopId;
+let waterY, cameraX, level = 1;
+let currentRunCoins = 50;
+let totalCoins = 0;
+let unlockedSkins = [];
+let isJumping = false;
+let gameIsOver = false;
+let gameLoopId;
 let selectedBottleSkinId = 'bottleClassic';
 
-// --- Skin & Data Management ---
-function loadUnlockedSkins() { unlockedSkins = JSON.parse(localStorage.getItem('bottlePlayUnlockedSkins')) || ['bottleClassic']; }
-function saveUnlockedSkins() { localStorage.setItem('bottlePlayUnlockedSkins', JSON.stringify(unlockedSkins)); }
-function loadGameData() { totalCoins = parseInt(localStorage.getItem('bottlePlayTotalCoins')) || 0; totalCoinDisplayCount.textContent = totalCoins; }
-function saveGameData() { localStorage.setItem('bottlePlayTotalCoins', totalCoins); totalCoinDisplayCount.textContent = totalCoins; }
-function updateAndSaveTotalCoins() { totalCoins += currentRunCoins; saveGameData(); }
-function loadSkinSelection() { const savedSkin = localStorage.getItem('bottlePlaySelectedSkin'); selectedBottleSkinId = (savedSkin && unlockedSkins.includes(savedSkin)) ? savedSkin : 'bottleClassic'; }
+// --- Skin Store Logic ---
+function loadUnlockedSkins() {
+    const savedSkins = localStorage.getItem('bottlePlayUnlockedSkins');
+    unlockedSkins = savedSkins ? JSON.parse(savedSkins) : ['bottleClassic'];
+}
+
+function saveUnlockedSkins() {
+    localStorage.setItem('bottlePlayUnlockedSkins', JSON.stringify(unlockedSkins));
+}
 
 function populateSkins() {
     skinsContainer.innerHTML = '';
     skins.forEach(skin => {
         const isUnlocked = unlockedSkins.includes(skin.id);
         const card = document.createElement('div');
-        card.className = 'skin-card'; card.dataset.id = skin.id;
+        card.className = 'skin-card';
+        card.dataset.id = skin.id;
+
         const img = document.createElement('img');
         if (images[skin.id] && images[skin.id].complete) img.src = images[skin.id].src;
         else if (skin.locked) img.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
-        const name = document.createElement('p'); name.textContent = skin.name;
-        const info = document.createElement('div'); info.className = 'skin-info';
-        if (skin.locked) { card.classList.add('locked'); info.textContent = 'Coming Soon'; } 
-        else if (isUnlocked) { info.textContent = 'Owned'; } 
-        else {
-            card.classList.add('locked'); info.textContent = skin.price;
-            if (images.coin && images.coin.complete) { const coinIcon = new Image(); coinIcon.src = images.coin.src; info.appendChild(coinIcon); }
+
+        const name = document.createElement('p');
+        name.textContent = skin.name;
+        
+        const info = document.createElement('div');
+        info.className = 'skin-info';
+
+        if (skin.locked) {
+            card.classList.add('locked');
+            info.textContent = 'Coming Soon';
+        } else if (isUnlocked) {
+            info.textContent = 'Owned';
+        } else {
+            card.classList.add('locked');
+            info.textContent = skin.price;
+            if (images.coin && images.coin.complete) {
+                const coinIcon = new Image();
+                coinIcon.src = images.coin.src;
+                info.appendChild(coinIcon);
+            }
         }
-        card.appendChild(img); card.appendChild(name); card.appendChild(info);
+
+        card.appendChild(img);
+        card.appendChild(name);
+        card.appendChild(info);
+
         card.addEventListener('click', () => {
             if (skin.locked) return;
+
             if (unlockedSkins.includes(skin.id)) {
-                selectedBottleSkinId = skin.id; localStorage.setItem('bottlePlaySelectedSkin', skin.id); updateSelectedCard();
-            } else if (totalCoins >= skin.price) {
-                totalCoins -= skin.price; unlockedSkins.push(skin.id); selectedBottleSkinId = skin.id;
-                saveGameData(); saveUnlockedSkins(); localStorage.setItem('bottlePlaySelectedSkin', skin.id);
-                showModal('Purchase Successful!', `You have bought the ${skin.name} bottle!`, 'Awesome!', null);
-                populateSkins(); updateSelectedCard();
-            } else { showModal('Not Enough Coins', `You need ${skin.price} coins to buy this bottle.`, 'OK', null); }
+                selectedBottleSkinId = skin.id;
+                localStorage.setItem('bottlePlaySelectedSkin', skin.id);
+                updateSelectedCard();
+            } else {
+                if (totalCoins >= skin.price) {
+                    totalCoins -= skin.price;
+                    unlockedSkins.push(skin.id);
+                    selectedBottleSkinId = skin.id;
+                    saveGameData();
+                    saveUnlockedSkins();
+                    localStorage.setItem('bottlePlaySelectedSkin', skin.id);
+                    showModal('Purchase Successful!', `You have bought the ${skin.name} bottle!`, 'Awesome!', null);
+                    populateSkins();
+                    updateSelectedCard();
+                } else {
+                    showModal('Not Enough Coins', `You need ${skin.price} coins to buy this bottle.`, 'OK', null);
+                }
+            }
         });
+
         skinsContainer.appendChild(card);
     });
     updateSelectedCard();
 }
-function updateSelectedCard() { document.querySelectorAll('.skin-card').forEach(c => c.classList.toggle('selected', c.dataset.id === selectedBottleSkinId)); }
 
-// --- Game Flow & Initialization ---
+function updateSelectedCard() {
+    const cards = document.querySelectorAll('.skin-card');
+    cards.forEach(card => card.classList.toggle('selected', card.dataset.id === selectedBottleSkinId));
+}
+
+function loadSkinSelection() {
+    const savedSkin = localStorage.getItem('bottlePlaySelectedSkin');
+    if (savedSkin && unlockedSkins.includes(savedSkin)) {
+        selectedBottleSkinId = savedSkin;
+    } else {
+        selectedBottleSkinId = 'bottleClassic';
+    }
+}
+
+// --- Game Data Persistence ---
+function loadGameData() {
+    totalCoins = parseInt(localStorage.getItem('bottlePlayTotalCoins')) || 0;
+    totalCoinDisplayCount.textContent = totalCoins;
+}
+
+function saveGameData() {
+    localStorage.setItem('bottlePlayTotalCoins', totalCoins);
+    totalCoinDisplayCount.textContent = totalCoins;
+}
+
+function updateAndSaveTotalCoins() {
+    totalCoins += currentRunCoins;
+    saveGameData();
+}
+
+// --- Game Flow & Initialization (گیم شروع کرنے کا فنکشن) ---
 function init() {
-  gameIsOver = false; cameraX = 0; currentRunCoins = 0; particles = [];
-  const platformY = canvas.height - 120, startPlatformX = 100;
+  gameIsOver = false;
+  cameraX = 0;
+  currentRunCoins = 0;
+  particles = [];
+  const platformY = canvas.height - 120;
+  const startPlatformX = 100;
+
+  // بوتل کی سیٹنگز یہاں ہیں
   bottle = { x: startPlatformX + 75, y: platformY - 120, width: BOTTLE_WIDTH, height: BOTTLE_HEIGHT, vx: 0, vy: 0, angle: 0, onGround: true };
+  
+  // پلیٹ فارم اور رکاوٹیں بنائیں
   const nextPlatformX = 4000 + (level - 1) * 1000;
   platforms = [ { x: startPlatformX, y: platformY, width: 250, height: 80 }, { x: nextPlatformX, y: platformY, width: 250, height: 80 } ];
   helicopters = []; sharks = []; coins = [];
-  const totalDistance = nextPlatformX - startPlatformX, numObstacles = 2 + level, obstacleChance = Math.min(0.95, 0.60 + level * 0.05);
+  const totalDistance = nextPlatformX - startPlatformX;
+  const numObstacles = 2 + level;
+  const obstacleChance = Math.min(0.95, 0.60 + level * 0.05);
+
   for (let i = 1; i <= numObstacles; i++) {
       const pos = startPlatformX + (totalDistance / (numObstacles + 1)) * i;
       if (Math.random() < obstacleChance) {
@@ -448,119 +539,170 @@ function init() {
         else sharks.push({ width: 100*0.7, height: 150*0.7, vy:0, isJumping:false, hasJumped:false, triggerX: pos});
       }
   }
+
+  // سکے بنائیں
   const numCoins = 10 + (level * 2);
-  for (let i = 0; i < numCoins; i++) { coins.push({ x: startPlatformX + 300 + Math.random() * (totalDistance - 600), y: platformY - 100 - (Math.random() * 200), width: 35, height: 35, isCollected: false, animationTimer: Math.random() * Math.PI * 2 }); }
+  for (let i = 0; i < numCoins; i++) {
+      coins.push({ x: startPlatformX + 300 + Math.random() * (totalDistance - 600), y: platformY - 100 - (Math.random() * 200), width: 35, height: 35, isCollected: false, animationTimer: Math.random() * Math.PI * 2 });
+  }
+
   waterY = platformY + 30;
   if (gameLoopId) cancelAnimationFrame(gameLoopId);
+  
+  // دوسری آوازوں کو روکا جاتا ہے، لیکن بیک گراؤنڈ میوزک چلتا رہتا ہے۔
   stopAllSounds();
+  
   gameLoop();
 }
 
 // --- Particle System & Jump ---
-function createJumpParticles(){ const pCount = 20, bX = bottle.x + bottle.width / 2, bY = bottle.y + bottle.height; for (let i = 0; i < pCount; i++) { particles.push({ x: bX, y: bY, vx: (Math.random() - 0.5) * 3, vy: Math.random() * -3 - 2, size: Math.random() * 4 + 2, lifespan: 40 + Math.random() * 40, color: particleColors[Math.floor(Math.random() * particleColors.length)] }); } }
-function handleParticles(){ for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.lifespan--; if (p.lifespan <= 0) { particles.splice(i, 1); continue; } p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.size *= 0.96; ctx.globalAlpha = p.lifespan / 60; ctx.beginPath(); ctx.arc(p.x - cameraX, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); ctx.globalAlpha = 1.0; } }
-function jump(e) { e.preventDefault(); if (gameIsOver) return; if (bottle.onGround || isJumping) { bottle.vy = JUMP_VELOCITY; bottle.vx = MOVE_SPEED; isJumping = true; bottle.onGround = false; createJumpParticles(); playSound('jumpSound'); } }
+function createJumpParticles(){
+    const particleCount = 20; const bottleBottomX = bottle.x + bottle.width / 2; const bottleBottomY = bottle.y + bottle.height;
+    for (let i = 0; i < particleCount; i++) { particles.push({ x: bottleBottomX, y: bottleBottomY, vx: (Math.random() - 0.5) * 3, vy: Math.random() * -3 - 2, size: Math.random() * 4 + 2, lifespan: 40 + Math.random() * 40, color: particleColors[Math.floor(Math.random() * particleColors.length)] }); }
+}
+function handleParticles(){
+    for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.lifespan--; if (p.lifespan <= 0) { particles.splice(i, 1); continue; } p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.size *= 0.96; ctx.globalAlpha = p.lifespan / 60; ctx.beginPath(); ctx.arc(p.x - cameraX, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); ctx.globalAlpha = 1.0; }
+}
+function jump(e) {
+  e.preventDefault(); if (gameIsOver) return;
+  if (bottle.onGround || isJumping) {
+      bottle.vy = JUMP_VELOCITY; 
+      bottle.vx = MOVE_SPEED; 
+      isJumping = true; 
+      bottle.onGround = false; 
+      createJumpParticles(); 
+      playSound('jumpSound'); // جمپ کی آواز
+  }
+}
 
 // --- UI & Modals ---
-function drawUI(){ const barWidth=canvas.width*0.5,barX=(canvas.width-barWidth)/2,barY=60,barHeight=10;ctx.fillStyle='white';ctx.strokeStyle='black';ctx.lineWidth=3;ctx.font='bold 24px Poppins';ctx.textAlign='left';ctx.strokeText(`Level: ${level}`,barX,barY-15);ctx.fillText(`Level: ${level}`,barX,barY-15);ctx.textAlign='right';if(images.coin&&images.coin.complete){ctx.drawImage(images.coin,barX+barWidth-30,barY-35,25,25);ctx.strokeText(`${currentRunCoins}`,barX+barWidth-40,barY-15);ctx.fillText(`${currentRunCoins}`,barX+barWidth-40,barY-15);}const startPoint=platforms[0].x+platforms[0].width/2,endPoint=platforms[1].x+platforms[1].width/2;let progress=Math.max(0,Math.min(1,(bottle.x-startPoint)/(endPoint-startPoint)));ctx.fillStyle='rgba(255,255,255,0.5)';ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(barX,barY,barWidth,barHeight,5);ctx.fill();ctx.stroke();const dotX=barX+(progress*barWidth);ctx.beginPath();ctx.arc(dotX,barY+barHeight/2,10,0,Math.PI*2);ctx.fillStyle='#e74c3c';ctx.fill();ctx.strokeStyle='#c0392b';ctx.stroke(); }
-function showModal(title, message, buttonText, callback) { modalTitle.textContent = title; modalMessage.textContent = message; modalButton.textContent = buttonText; const newButton = modalButton.cloneNode(true); modalButton.parentNode.replaceChild(newButton, modalButton); modalButton = newButton; modalButton.addEventListener('click', () => { modal.classList.add('hidden'); if (callback) callback(); }, { once: true }); modal.classList.remove('hidden'); }
+function drawUI(){
+  const barWidth = canvas.width * 0.5; const barX = (canvas.width - barWidth) / 2; const barY = 60; const barHeight = 10; ctx.fillStyle = 'white'; ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.font = 'bold 24px Poppins'; ctx.textAlign = 'left'; ctx.strokeText(`Level: ${level}`, barX, barY - 15); ctx.fillText(`Level: ${level}`, barX, barY - 15); ctx.textAlign = 'right'; if (images.coin && images.coin.complete) { ctx.drawImage(images.coin, barX + barWidth - 30, barY - 35, 25, 25); ctx.strokeText(`${currentRunCoins}`, barX + barWidth - 40, barY - 15); ctx.fillText(`${currentRunCoins}`, barX + barWidth - 40, barY - 15); } const startPoint = platforms[0].x + platforms[0].width / 2; const endPoint = platforms[1].x + platforms[1].width / 2; let progress = Math.max(0, Math.min(1, (bottle.x - startPoint) / (endPoint - startPoint))); ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(barX, barY, barWidth, barHeight, 5); ctx.fill(); ctx.stroke(); const dotX = barX + (progress * barWidth); ctx.beginPath(); ctx.arc(dotX, barY + barHeight / 2, 10, 0, Math.PI * 2); ctx.fillStyle = '#e74c3c'; ctx.fill(); ctx.strokeStyle = '#c0392b'; ctx.stroke();
+}
+function showModal(title, message, buttonText, callback) {
+    modalTitle.textContent = title; modalMessage.textContent = message; modalButton.textContent = buttonText;
+    const newButton = modalButton.cloneNode(true); modalButton.parentNode.replaceChild(newButton, modalButton);
+    modalButton = newButton;
+    modalButton.addEventListener('click', () => { modal.classList.add('hidden'); if (callback) callback(); }, { once: true });
+    modal.classList.remove('hidden');
+}
 
-// --- Game State Management ---
-function endGame(reason) { if (gameIsOver) return; gameIsOver = true; cancelAnimationFrame(gameLoopId); updateAndSaveTotalCoins(); stopAllSounds(); playSound('gameOverSound'); showModal("Game Over", reason, "Try Again", () => { level = 1; init(); }); }
-function checkCollision(r1, r2) { return (r1.x < r2.x + r2.width && r1.x + r1.width > r2.x && r1.y < r2.y + r2.height && r1.y + r1.height > r2.y); }
+// --- Game State Management (گیم کی حالت کا انتظام) ---
+function endGame(reason) {
+    if (gameIsOver) return;
+    gameIsOver = true; 
+    cancelAnimationFrame(gameLoopId); 
+    updateAndSaveTotalCoins();
+    stopAllSounds();
+    playSound('gameOverSound'); // گیم اوور کی آواز
+    showModal("Game Over", reason, "Try Again", () => { level = 1; init(); });
+}
+function checkCollision(rect1, rect2) {
+    return (rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y);
+}
 
 // --- Main Game Loop (گیم کا مرکزی چکر) ---
 function gameLoop() {
   if (gameIsOver) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (!bottle.onGround) { bottle.vy += GRAVITY; bottle.y += bottle.vy; bottle.x += bottle.vx; bottle.angle += 0.1; } else { bottle.vx = 0; }
+
+  // بوتل کی حرکت
+  if (!bottle.onGround) { bottle.vy += GRAVITY; bottle.y += bottle.vy; bottle.x += bottle.vx; bottle.angle += 0.1; }
+  else { bottle.vx = 0; }
   cameraX = bottle.x - 150;
-  if (images.background?.complete) { const imgAspect = images.background.width / images.background.height, bgHeight = canvas.height, bgWidth = bgHeight * imgAspect, bgOffset = (cameraX * 0.5) % bgWidth; ctx.drawImage(images.background, -bgOffset, 0, bgWidth, bgHeight); ctx.drawImage(images.background, bgWidth - bgOffset, 0, bgWidth, bgHeight); }
-  if (images.water?.complete) { const waterOffset = cameraX % images.water.width; ctx.drawImage(images.water, -waterOffset, waterY, images.water.width, canvas.height - waterY); ctx.drawImage(images.water, images.water.width - waterOffset, waterY, images.water.width, canvas.height - waterY); }
+
+  // بیک گراؤنڈ ڈرا کریں
+  if (images.background && images.background.complete) {
+    const imgAspect = images.background.width / images.background.height;
+    const bgHeight = canvas.height;
+    const bgWidth = bgHeight * imgAspect;
+    const bgOffset = (cameraX * 0.5) % bgWidth;
+    ctx.drawImage(images.background, -bgOffset, 0, bgWidth, bgHeight);
+    ctx.drawImage(images.background, bgWidth - bgOffset, 0, bgWidth, bgHeight);
+  }
+
+  // پانی ڈرا کریں
+  if (images.water && images.water.complete) { 
+      const waterOffset = cameraX % images.water.width; 
+      ctx.drawImage(images.water, -waterOffset, waterY, images.water.width, canvas.height - waterY); 
+      ctx.drawImage(images.water, images.water.width - waterOffset, waterY, images.water.width, canvas.height - waterY); 
+  }
+
   handleParticles();
-  if(images.platform?.complete) platforms.forEach(p => ctx.drawImage(images.platform, p.x-cameraX, p.y, p.width, p.height));
-  if(images.finishFlag?.complete) { const flagHeight=100,flagWidth=60,destPlatform=platforms[1]; ctx.drawImage(images.finishFlag, destPlatform.x + (destPlatform.width/2)-(flagWidth/2)-cameraX, destPlatform.y-flagHeight, flagWidth, flagHeight); }
-  if (images.coin?.complete) { coins.forEach(c => { if (!c.isCollected) { c.animationTimer += COIN_FLIP_SPEED; const scaleX = Math.cos(c.animationTimer); ctx.save(); ctx.translate(c.x-cameraX+c.width/2, c.y+c.height/2); ctx.scale(scaleX,1); ctx.drawImage(images.coin, -c.width/2, -c.height/2, c.width, c.height); ctx.restore(); if (checkCollision(bottle, c)) { c.isCollected = true; currentRunCoins++; playSound('coinSound'); } } }); }
+
+  // پلیٹ فارم اور جھنڈا ڈرا کریں
+  if(images.platform && images.platform.complete) platforms.forEach(p => ctx.drawImage(images.platform, p.x-cameraX, p.y, p.width, p.height));
+  if(images.finishFlag && images.finishFlag.complete) {
+      const flagHeight = 100; const flagWidth = 60; const destPlatform = platforms[1];
+      ctx.drawImage(images.finishFlag, destPlatform.x + (destPlatform.width/2) - (flagWidth/2) - cameraX, destPlatform.y - flagHeight, flagWidth, flagHeight);
+  }
+
+  // سکے ڈرا کریں اور ٹکراؤ چیک کریں
+  if (images.coin && images.coin.complete) {
+    coins.forEach(coin => {
+      if (!coin.isCollected) {
+          coin.animationTimer += COIN_FLIP_SPEED; const scaleX = Math.cos(coin.animationTimer);
+          ctx.save(); ctx.translate(coin.x - cameraX + coin.width / 2, coin.y + coin.height / 2);
+          ctx.scale(scaleX, 1); ctx.drawImage(images.coin, -coin.width / 2, -coin.height / 2, coin.width, coin.height); ctx.restore();
+          if (checkCollision(bottle, coin)) { 
+              coin.isCollected = true; 
+              currentRunCoins++;
+              playSound('coinSound'); // سکہ اٹھانے کی آواز
+          }
+      }
+    });
+  }
+
+  // رکاوٹیں (شارک اور ہیلی کاپٹر)
   sharks.forEach(s => { if (!s.hasJumped && bottle.x > s.triggerX) {s.isJumping = true; s.hasJumped = true; s.x = s.triggerX; s.y = waterY; s.vy = -23;} if (s.isJumping) {s.vy += 0.8; s.y += s.vy; ctx.drawImage(images.shark, s.x-cameraX, s.y, s.width, s.height); if (checkCollision(bottle,s)) return endGame("🦈 Caught by a shark!"); if(s.y > canvas.height) s.isJumping = false;} });
   helicopters.forEach(h => { h.animationPhase += 0.05; h.y = h.baseY + Math.sin(h.animationPhase)*10; ctx.drawImage(images.helicopter, h.x-cameraX, h.y, h.width, h.height); if(checkCollision(bottle,h)) return endGame("🚁 Crashed into a helicopter!"); });
+
+  // زمین پر ٹکراؤ
   bottle.onGround = false;
   platforms.forEach(p => { if (bottle.vy>0 && bottle.x+bottle.width>p.x && bottle.x<p.x+p.width && bottle.y+bottle.height>=p.y && bottle.y+bottle.height<=p.y+20) { bottle.y = p.y - bottle.height; bottle.vy = 0; bottle.onGround = true; isJumping = false; bottle.angle = 0; } });
+
+  // بوتل ڈرا کریں
   const bottleImage = images[selectedBottleSkinId];
-  if (bottleImage?.complete) { ctx.save(); ctx.translate(bottle.x-cameraX+bottle.width/2, bottle.y+bottle.height/2); ctx.rotate(bottle.angle); ctx.drawImage(bottleImage, -bottle.width/2, -bottle.height/2, bottle.width, bottle.height); ctx.restore(); }
+  if (bottleImage && bottleImage.complete) { ctx.save(); ctx.translate(bottle.x - cameraX + bottle.width / 2, bottle.y + bottle.height / 2); ctx.rotate(bottle.angle); ctx.drawImage(bottleImage, -bottle.width / 2, -bottle.height / 2, bottle.width, bottle.height); ctx.restore(); }
+
   drawUI();
+
+  // گیم ہارنے یا جیتنے کی شرائط
   if (bottle.y + bottle.height < 0) return endGame("🚀 Flew too high!");
   if (bottle.y > canvas.height) return endGame("💧 Fell into the water!");
-  if (bottle.onGround && bottle.x > platforms[1].x && bottle.x < platforms[1].x + platforms[1].width) { if (gameIsOver) return; gameIsOver = true; cancelAnimationFrame(gameLoopId); updateAndSaveTotalCoins(); stopAllSounds(); playSound('winSound'); showModal("🎉 Level Complete!", `You completed level ${level}.`, "Next Level", () => { level++; init(); }); return; }
+  if (bottle.onGround && bottle.x > platforms[1].x && bottle.x < platforms[1].x + platforms[1].width) {
+    if (gameIsOver) return; 
+    gameIsOver = true; 
+    cancelAnimationFrame(gameLoopId); 
+    updateAndSaveTotalCoins();
+    stopAllSounds();
+    playSound('winSound'); // لیول جیتنے کی آواز
+    showModal("🎉 Level Complete!", `You completed level ${level}.`, "Next Level", () => { level++; init(); });
+    return;
+  }
+
   gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-// --- Initial Setup and Event Listeners ---
-function initializeGame() {
-    loadGameData();
-    loadUnlockedSkins();
-    loadSkinSelection();
-    loadMuteState();
-
-    // NEW: Tutorial logic
-    if (!localStorage.getItem('bottlePlayHasPlayedBefore')) {
-        tutorialScreen.classList.remove('hidden');
-        // We will show the start screen after the user clicks "Got It!"
-    }
-
-    // Load essential assets for the home screen first
-    loadAssetBatch(preloadAssets, () => {
-        if (images.homeBackground?.complete) {
-            startScreen.style.backgroundImage = `url(${images.homeBackground.src})`;
-            skinSelectionScreen.style.backgroundImage = `url(${images.homeBackground.src})`;
-            tutorialScreen.style.backgroundImage = `url(${images.homeBackground.src})`; // Also set for tutorial
-        }
-        if (images.coin?.complete) {
-            totalCoinDisplayIcon.src = images.coin.src;
-        }
-    });
-
-    // Load sounds
-    Object.keys(soundAssets).forEach(key => {
-        const audio = new Audio(soundAssets[key]);
-        audio.oncanplaythrough = () => { applyMuteState(); };
-        sounds[key] = audio;
-    });
-}
-
-tutorialButton.addEventListener('click', () => {
-    localStorage.setItem('bottlePlayHasPlayedBefore', 'true');
-    tutorialScreen.classList.add('hidden');
-    startBackgroundMusic(); // This is the first user interaction
-});
+// --- Initial Setup and Event Listeners (ابتدائی سیٹ اپ) ---
+loadGameData();
+loadUnlockedSkins();
+loadSkinSelection();
+loadMuteState(); // آواز کی سیٹنگ لوڈ کریں
 
 startButton.addEventListener('click', () => {
-    startBackgroundMusic(); // Start music on click
-
-    if (gameAssetsLoaded) {
-        startScreen.classList.add('hidden');
-        skinSelectionScreen.classList.remove('hidden');
-        populateSkins();
-    } else {
-        startButton.textContent = "Loading...";
-        startButton.disabled = true;
-        loadAssetBatch(gameAssets, () => {
-            gameAssetsLoaded = true;
-            startButton.textContent = "Start Game";
-            startButton.disabled = false;
-            startScreen.classList.add('hidden');
-            skinSelectionScreen.classList.remove('hidden');
-            populateSkins();
-        });
+    if (assetsAreLoaded) { 
+        startBackgroundMusic(); // پہلی بار کلک کرنے پر بیک گراؤنڈ میوزک شروع کریں
+        startScreen.classList.add('hidden'); 
+        skinSelectionScreen.classList.remove('hidden'); 
+        populateSkins(); 
     }
+    else { startButton.textContent = "Loading..."; }
 });
-
 playButton.addEventListener('click', () => { skinSelectionScreen.classList.add('hidden'); init(); });
-soundToggleButton.addEventListener('click', toggleMute);
+soundToggleButton.addEventListener('click', toggleMute); // ساؤنڈ بٹن کا ایونٹ لسنر
 window.addEventListener('mousedown', jump);
 window.addEventListener('touchstart', jump);
-
-// Start the whole process
-initializeGame();
 
 </script>
 </body>
